@@ -330,24 +330,7 @@ class CumotionActionServer(Node):
 
     def load_motion_gen(self):
         tensor_args = self.tensor_args
-        world_file = WorldConfig.from_dict(
-            {
-                "cuboid": {
-                    "table": {
-                        "pose": [0, 0, -0.05, 1, 0, 0, 0],  # x, y, z, qw, qx, qy, qz
-                        "dims": [2.0, 2.0, 0.1],
-                    }
-                },
-                "voxel": {
-                    "world_voxel": {
-                        "dims": self.__grid_size_m,
-                        "pose": [0, 0, 0, 1, 0, 0, 0],  # x, y, z, qw, qx, qy, qz
-                        "voxel_size": self.__voxel_size,
-                        "feature_dtype": torch.bfloat16,
-                    },
-                },
-            }
-        )
+        world_file = WorldConfig()
 
         robot_config = get_robot_config(
             robot_file=self.__robot_file,
@@ -367,7 +350,7 @@ class CumotionActionServer(Node):
             trajopt_seed_ratio=self.__trajopt_seed_ratio,
             interpolation_dt=self.__interpolation_dt,
             collision_cache=self.__collision_cache,
-            collision_checker_type=CollisionCheckerType.VOXEL,
+            collision_checker_type=CollisionCheckerType.MESH,
             ee_link_name=self.__tool_frame,
             finetune_trajopt_iters=self.__trajopt_finetune_iters,
         )
@@ -790,7 +773,11 @@ class CumotionActionServer(Node):
                     joint_names=goal_jnames,
                 )
             )
-            goal_pose = self.motion_gen.compute_kinematics(goal_state).ee_pose.clone()
+            kinematic_model_state = self.motion_gen.compute_kinematics(goal_state)
+            goal_pose = kinematic_model_state.ee_pose.clone()
+            link_poses = kinematic_model_state.link_poses
+            for key in list(link_poses.keys()):
+                link_poses[key] = link_poses[key].clone()
         elif (
             len(plan_req.goal_constraints[0].position_constraints) > 0
             and len(plan_req.goal_constraints[0].orientation_constraints) > 0
@@ -854,6 +841,7 @@ class CumotionActionServer(Node):
                 enable_graph_attempt=1,
                 time_dilation_factor=time_dilation_factor,
             ),
+            link_poses,
         )
         with self.lock:
             self.planner_busy = False
