@@ -4,3 +4,6 @@
 # Ignore TensorRT plan files
 *.plan
 *.engine
+
+*curobo_core
+*isaac_ros_cumotion_python_utils/build/

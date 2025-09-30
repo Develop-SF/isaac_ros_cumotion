@@ -362,9 +362,11 @@ class CumotionActionServer(Node):
         self.__world_collision = self.motion_gen.world_coll_checker
         if not self.__add_ground_plane:
             self.motion_gen.clear_world_cache()
-        self.__cumotion_grid_shape = self.__world_collision.get_voxel_grid(
-            "world_voxel"
-        ).get_grid_shape()[0]
+
+        # Does not need this since we are using CollisionCheckerType.MESH
+        # self.__cumotion_grid_shape = self.__world_collision.get_voxel_grid(
+        #     "world_voxel"
+        # ).get_grid_shape()[0]
 
     def warmup(self):
         self.get_logger().info("warming up cuMotion, wait until ready")
